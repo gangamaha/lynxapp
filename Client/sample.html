@@ -1,0 +1,431 @@
+<html>
+<head>
+
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css" />
+  <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.js"></script>
+
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+
+  <!--[if lte IE 8]>
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v2/themes/css/cartodb.ie.css" />
+  <![endif]-->
+  <style>
+    html, body {width:100%; height:100%; padding: 0; margin: 0;}
+
+    #cartodb-map { width: 100%; height:100%; background: black;}
+
+    .spacer {
+        margin-top: 20px; /* define margin as you see fit */
+    }
+
+    .footer3 {
+        background-color:rgba(200,200,200,0.7);
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index:10001;
+        display:none;
+        height:50%;
+    } 
+
+    .icon-list{
+      display: inline-block;
+      font-size: 1.25em;
+    }
+
+    #optionShow {
+      position:absolute;
+      left: 25px;
+      top: 150px;
+      z-index: 1000;
+    }
+
+    #gotoLoc {
+      position:absolute;
+      left: 20px;
+      top: 100px;
+      z-index: 1000;
+    }
+    #rank{
+      width: 100px;
+    }
+  </style>
+
+  <script>
+  $(document).ready(function(){
+
+
+      $('#closeFooter3').click(function() {
+          $( '.footer3' ).toggle( 'slow' );
+      });
+
+      $(window).resize(function(){
+          $("#copy2").height($(".footer3").height() - 150);
+      });
+
+      // Resize footers on startup
+      $("#copy2").height($(".footer3").height() - 150);
+
+      $("#weather").mouseenter( function(){ 
+        $('#datadiv').show();
+      }).mouseleave( function(){
+        $('#datadiv').hide();
+      });
+
+      $("#today").mouseenter( function(){ 
+        $('#datadiv2').html(function(){
+              var td = new Date();
+              document.getElementById("datadiv2").innerHTML = td.toString();
+        }); 
+        $('#datadiv2').show();
+      }).mouseleave(function(){
+          $('#datadiv2').hide();
+      });
+
+      $("#cost").mouseenter( function(){ 
+          $('#datadiv3').show();
+      }).mouseleave( function(){
+        $('#datadiv3').hide();
+      });
+
+
+      $("#geographic-from").change(function()
+          {
+              var queryURL;
+
+              if($(this).val() == "East Orlando")
+              {
+                  queryURL = "http://gangadhar.cartodb.com/api/v2/sql?q=SELECT DISTINCT stop_name,stop_id FROM rawdata_copy where stop_lon > -81.381401";
+
+              }
+              else if($(this).val() == "West Orlando")
+              {
+                  queryURL = "http://gangadhar.cartodb.com/api/v2/sql?q=select DISTINCT stop_name,stop_id from rawdata_copy where stop_lon < -81.381401";
+              }
+              else if($(this).val() == "North Orlando"){
+                queryURL = "http://gangadhar.cartodb.com/api/v2/sql?q=select  DISTINCT stop_name,stop_id from rawdata_copy where stop_lat > 28.549";
+              }
+              else{
+                queryURL = "http://gangadhar.cartodb.com/api/v2/sql?q=select  DISTINCT stop_name,stop_id from rawdata_copy where stop_lat < 28.549";
+              }
+              $.ajax({
+                url: queryURL,
+                dataType: "json",
+                complete: function(data){
+                      //console.log($.parseJSON(data.responseText).rows.forEach(function(entry){console.log(entry.stop_name);}
+
+                      $('#from-bus-station').empty();
+
+                      $.parseJSON(data.responseText).rows.forEach(function(entry){
+                          $('#from-bus-station').append($('<option attr = "s'+entry.stop_id+'"></option>').val(entry.stop_name).html( entry.stop_name));
+                      });
+                }
+              });
+          });
+
+        $("#geographic-to").change(function()
+          {
+              var queryURL1;
+
+              if($(this).val() == "East Orlando")
+              {
+                  queryURL1 = "http://gangadhar.cartodb.com/api/v2/sql?q=SELECT DISTINCT stop_name,stop_id FROM rawdata_copy where stop_lon > -81.381401";
+
+              }
+              else if($(this).val() == "West Orlando")
+              {
+                  queryURL1 = "http://gangadhar.cartodb.com/api/v2/sql?q=select DISTINCT stop_name,stop_id from rawdata_copy where stop_lon < -81.381401";
+              }
+              else if($(this).val() == "North Orlando"){
+                queryURL1 = "http://gangadhar.cartodb.com/api/v2/sql?q=select  DISTINCT stop_name,stop_id from rawdata_copy where stop_lat > 28.549";
+              }
+              else{
+                queryURL1 = "http://gangadhar.cartodb.com/api/v2/sql?q=select  DISTINCT stop_name,stop_id from rawdata_copy where stop_lat < 28.549";
+              }
+              $.ajax({
+                url: queryURL1,
+                dataType: "json",
+                complete: function(data){
+                      //console.log($.parseJSON(data.responseText).rows.forEach(function(entry){console.log(entry.stop_name);}
+
+                      $('#to-bus-station').empty();
+
+                      $.parseJSON(data.responseText).rows.forEach(function(entry){
+                          $('#to-bus-station').append($('<option attr = "s'+entry.stop_id+'"></option>').val(entry.stop_name).html( entry.stop_name));
+                      });
+                }
+              });
+          }); 
+
+  });
+
+  var callbackFunction = function(data) {
+    var wind = data.query.results.channel.wind;
+    $('#datadiv').html("Temperature (F) : " + wind.chill);
+  };
+
+  $.ajax({
+    url: "https://query.yahooapis.com/v1/public/yql?q=select wind from weather.forecast where woeid in (select woeid from geo.places(1) where text='orlando, fl')&format=json&callback=callbackFunction"
+  })
+
+  // GLOBAL REF TO MAP
+  var map;
+
+
+
+
+  function geoFindMe() {
+
+    if (!navigator.geolocation){
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    function success(position) {
+      var latitude  = position.coords.latitude;
+      var longitude = position.coords.longitude;
+
+       map.panTo([latitude, longitude]);
+    };
+
+    function error() {
+      alert("Unable to retrieve your location");
+    };
+
+    navigator.geolocation.getCurrentPosition(success, error);
+
+  }
+
+
+  function check() {
+    if(document.getElementById("geographic-from").value == "Select Starting Geography")
+    {
+      $("#ErrorDiv").show()
+      $("#ErrorDiv").html("Please select an option for Geograhic From drop-down")
+      $("#ErrorDiv").fadeOut(4000);
+      document.getElementById("geographic-from").focus();
+      return false;
+    }
+    if(document.getElementById("geographic-to").value == "Select Destination Geography")
+    {
+      $("#ErrorDiv").show()
+      $("#ErrorDiv").html("Please select an option for Geograhic To drop-down")
+      $("#ErrorDiv").fadeOut(4000);
+      document.getElementById("geographic-to").focus();
+      return false;
+    }
+    if(document.getElementById("from-bus-station").value == "Select From Bus-Station"){
+      $("#ErrorDiv").show()
+      $("#ErrorDiv").html("Please select an option for From Bus-Station")
+      $("#ErrorDiv").fadeOut(4000);
+      document.getElementById("from-bus-station").focus();
+      return false;
+    }
+    if(document.getElementById("to-bus-station").value == "Select To Bus-Station"){
+      $("#ErrorDiv").show()
+      $("#ErrorDiv").html("Please select an option for To Bus-Station")
+      $("#ErrorDiv").fadeOut(4000);
+      document.getElementById("to-bus-station").focus();
+      return false;
+    }
+    if(document.getElementById("from-bus-station").value === document.getElementById("to-bus-station").value){
+      $("#ErrorDiv").show()
+      $("#ErrorDiv").html("From and To Bus stops must be different! Please select appropriate bus stops!")
+      $("#ErrorDiv").fadeOut(4000);
+      return false;
+    }
+    
+    var atr,atr1,rankno;
+
+    atr = $('#from-bus-station option:selected').attr('attr');
+    atr1 = $('#to-bus-station option:selected').attr('attr');
+    rankno = document.getElementById('rank').value;
+    var sendURL = "http://localhost:8080/pathavail?source="+atr+"&sink="+atr1+"&rank="+rankno+"";
+    alert(sendURL);
+
+     $.ajax({
+              url: sendURL,
+              //url:"http://localhost:8888/single?source=s792&sink=s3310&rank=2",
+              dataType: "json",
+              complete: function(data){
+                    //alert(JSON.stringify($.parseJSON(data.responseText).Path));
+                    var arrayPath = $.parseJSON(data.responseText.replace(/s/g,'')).Path.split(",");
+                   
+                    alert(arrayPath);
+
+
+
+                    var SQLfilter = "SELECT * FROM rawdata_283_29 where stop_id IN (" + arrayPath + ");";
+                    var subLayerOptions = {
+                        sql: SQLfilter
+                    }
+
+                    globalLayers[1].getSubLayer(1).setSQL(SQLfilter);
+                    
+
+
+                    }
+              });
+       
+        
+  }
+
+  </script>
+
+</head>
+
+<body>
+  <button id='optionShow' onclick=" $( '.footer3' ).toggle( 'slow')">Info</button>
+  <button id="gotoLoc" onclick="geoFindMe()">Goto Loc</button>
+
+  <div id='cartodb-map'></div>
+
+        <div class="footer3">
+            <div class="container-fluid spacer">
+                <span class="tools pull-right">
+                   <!-- <a id="theButton" class="fa fa-chevron-up fa-lg" href="javascript:;"></a> -->
+                    <a id="closeFooter3" class="fa fa-times fa-lg" href="javascript:;"></a>
+                </span>
+            </div>
+
+            <div class="container-fluid spacer">
+
+                <div class="row">
+                <div class="col-lg-8 col-md-8 col-sm-8">
+                    <div class="panel panel-default">
+                        <div class="panel-body" id="RecentUpdates">
+                            <div id="copy2">
+
+
+
+                              <div class="row">
+                                <div class="col-lg-6 col-md-6 col-sm-6">
+
+                                    <p>Starting</p>
+
+                                     <select class = "form-control input-sm" id="geographic-from" name="geographic-from">
+                                        <option  disabled selected>Select Starting Geography</option>
+                                        <option>East Orlando</option>
+                                        <option>West Orlando</option>
+                                        <option>North Orlando</option>
+                                        <option>South Orlando</option>
+                                      </select>
+
+                                      <br>
+
+                                      <select class = "form-control input-sm" id = "from-bus-station" name = "from-bus-station">
+                                        <option disabled selected>Select From Bus-station</option>
+                                      </select>
+
+                                </div>
+                                <div class="col-lg-6 col-md-6 col-sm-6">
+
+                                    <p>Destination</p>
+
+                                   
+
+                                      <select class = "form-control input-sm" id="geographic-to" name="geographic-to">
+                                        <option  disabled selected>Select Destination Geography</option>
+                                        <option>East Orlando</option>
+                                        <option>West Orlando</option>
+                                        <option>North Orlando</option>
+                                        <option>South Orlando</option>
+                                      </select>
+                                    
+                                      <br>
+
+                                      <select class = "form-control input-sm" id = "to-bus-station" name = "to-bus-station">
+                                        <option disbaled selected>Select To Bus-Station</option>
+                                      </select>
+
+                                    </div>
+                                    <br>
+                                    <div class="col-lg-6 col-md-6 col-sm-6">
+                                    
+
+                                    <p>Route Priority: <select id = 'rank'>
+                                      <option>1</option>
+                                      <option>2</option>
+                                      <option>3</option>
+                                      </select>
+                                    </p>
+                                    </div>
+                              </div>
+
+
+                              <div style="margin-top:10px;"><button onclick = "check();">Submit</button></div>
+
+                              <div id="ErrorDiv" style="margin-top:10px;color:red;float:right;"></div>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4">
+                  <div class="panel panel-default">
+                        <div class="panel-body" >
+                          <div id="copy2">
+
+                              <div class="icon-list">
+                              <a href="#" id = "weather"><i class="fa fa-cloud" ></i></a>
+                              <a href="#"></a>
+                              <a href="#" id = "today"><i class="fa fa-calendar"></i></a>
+                              <a href="#"></a>
+                              <a href="#" id = "cost"><i class="fa fa-usd"></i></a>
+                              <!--a href="#" id = "location"><i class="fa fa-location-arrow"></i></a-->
+                            </div>
+                               <div id = "datadiv" style = "display:none;"></div>
+
+                            <div id = "datadiv2" style = "display:none;"></div>
+
+                            <div id = "datadiv3" style= "display:none;">
+                              The cost for single ride is $2. You can ask for transfer ticket and board another bus within 90 minutes using this transfer ticket. A single day ticket cost $4.50
+                            </div>
+                            <br>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+                </div>          
+            </div>
+        </div>
+
+<script>
+
+var globalLayers;
+
+window.onload = function() {
+     
+      var subLayerOptions = {
+        sql: "SELECT * FROM rawdata_283_29 where stop_id = '5940'",
+      }
+
+      cartodb.createVis('cartodb-map', 'https://cartomaporl.cartodb.com/api/v2/viz/813114e4-e4b1-11e4-83b0-0e4fddd5de28/viz.json',
+        {"time_slider":false, "cartodb_logo":false})
+        .done(function(vis, layers) {
+          // layer 0 is the base layer, layer 1 is cartodb layer
+          // when setInteraction is disabled featureOver is triggered
+          layers[1].getSubLayer(1).set(subLayerOptions);
+
+          debugger;
+          // you can get the native map to work with it
+          map = vis.getNativeMap();
+
+          globalLayers = layers;
+
+          // now, perform any operations you need, e.g. assuming map is a L.Map object:
+          // map.setZoom(3);
+          // map.panTo([50.5, 30.5]);
+        });
+}
+
+</script>
+
+</body>
+</html>
