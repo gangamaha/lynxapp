@@ -1,9 +1,9 @@
 # lynxapp
 Web application for Orlando Bus system
 
-Download the entire source from the gir repo:
+Download the entire source from the git repo:
 
-https://github.com/gangamaha/lynxapp.git
+git clone https://github.com/gangamaha/lynxapp.git
 
 Go to client folder, Right click on the file sample.html and open it in any latest Browser(preferably Firefox)
 
