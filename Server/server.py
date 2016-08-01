@@ -24,8 +24,10 @@ def returnsingle():
         sCost = path['cost']
         sPath = ", ".join(path['path'])               
         response.content_type='application/json'
+        response.headers['Access-Control-Allow-Origin']='*'
+        bus_Stop, bus_No, stop_Name, route_Id =  result.busChanger(source,sink,iRank)
         if i==1:
-            return { "BusChange": result.busChanger(source,sink,iRank) }
+            return { "BusStop": bus_Stop, "BusNo": bus_No, "StopName": stop_Name, "RouteNo ": route_Id}
         else:
             i=i-1
             continue
@@ -51,6 +53,7 @@ def returnsingle():
         sCost = path['cost']
         sPath = ", ".join(path['path'])               
         response.content_type='application/json'
+        response.headers['Access-Control-Allow-Origin']='*'
         if i==1:
             return { "Cost": sCost, "Path": sPath }
         else:
